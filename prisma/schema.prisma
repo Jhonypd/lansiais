@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PontoVenda {
+  id          Int          @id @default(autoincrement())
+  nome        String
+  cnpj        String       @unique
+  endereco    String
+  cidade      String
+  estado      UF
+  status      statusPonto  @default(ativo)
+  responsavel String
+  contato     String
+  pontoId     String       @map("_pontoId")
+  Emprestimo  Emprestimo[]
+  interacoes  Interacao[]
+  usuarios    Usuario      @relation(fields: [pontoId], references: [cpf])
+  Produto     Produto[]
+  propostas   Proposta[]
+}
+
+model Proposta {
+  id           Int            @id @default(autoincrement())
+  descricao    String
+  status       StatusProposta @default(em_digitacao)
+  pontoVendaId Int
+  usuarioId    Int
+  pontoVenda   PontoVenda     @relation(fields: [pontoVendaId], references: [id])
+  usuario      Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+model Usuario {
+  id          Int          @id @default(autoincrement())
+  nome        String
+  cpf         String       @unique
+  tipo        typeUser
+  cidade      String       @default("")
+  pontosVenda PontoVenda[]
+  propostas   Proposta[]
+}
+
+model Interacao {
+  id           Int        @id @default(autoincrement())
+  data         DateTime   @default(now())
+  tipo         String
+  descricao    String
+  pontoVendaId Int
+  pontoVenda   PontoVenda @relation(fields: [pontoVendaId], references: [id])
+}
+
+model Produto {
+  id           Int          @id @default(autoincrement())
+  nome         ProductList
+  productName  String
+  politica     String
+  taxa         Float
+  pontoVendaId String
+  emprestimoId Int?
+  Emprestimo   Emprestimo[]
+  PontoVenda   PontoVenda   @relation(fields: [pontoVendaId], references: [cnpj])
+}
+
+model Emprestimo {
+  id           Int        @id @default(autoincrement())
+  nome         String
+  saque        Float
+  pontoVendaId Int
+  taxa         Float
+  prazo        Prazo
+  valorParcela Float?
+  productId    Int?
+  pontoVenda   PontoVenda @relation(fields: [pontoVendaId], references: [id])
+  produto      Produto?   @relation(fields: [productId], references: [id])
+}
+
+enum statusPonto {
+  ativo
+  inativo
+}
+
+enum UF {
+  AC
+  AL
+  AM
+  AP
+  BA
+  CE
+  ES
+  GO
+  MA
+  MG
+  MS
+  MT
+  PA
+  PB
+  PR
+  PE
+  PI
+  RJ
+  RN
+  RO
+  RR
+  RS
+  SC
+  SE
+  SP
+  TO
+}
+
+enum StatusProposta {
+  em_digitacao
+  reprovada
+  pendente
+  aprovada
+  efetivada
+  cancelada
+}
+
+enum typeUser {
+  master
+  gerencial
+  lider
+  digitador
+  analista
+}
+
+enum ProductList {
+  emprestimo_pessoal
+  GV
+  consignado
+  FGTS
+}
+
+enum Prazo {
+  um
+  dois
+  tres
+  quatro
+  cinco
+  seis
+  sete
+  oito
+  nove
+  dez
+  onze
+  doze
+}
